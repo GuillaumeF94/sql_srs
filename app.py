@@ -1,26 +1,52 @@
+import io
 import streamlit as st
 import pandas as pd
 import duckdb as ddb
 
-data = {"a": [1, 2, 3], "b":[4, 5, 6]}
-df = pd.DataFrame(data)
-st.write("Spaced Repetition System SQL review")
 
-option = st.selectbox("What would you like to review",
-    ["Joins", "GroupBy", "Window Functions"],
-    index=None,
-    placeholder="Select a theme")
+csv = '''
+beverage,price
+orange_juice,2.5
+Espresso,2
+Tea,3
+'''
 
-st.write(option)
+csv2 = '''
+food_item,food_price
+cookie,2.5
+chocolatine,2
+muffin,3
+'''
 
-tab1, = st.tabs(["G"])
+beverages = pd.read_csv(io.StringIO(csv))
+food_items = pd.read_csv(io.StringIO(csv2))
+
+answer = """
+SELECT * FROM beverages
+CROSS JOIN food_items
+"""
+
+solution = ddb.sql(answer).df()
+
+st.header("Enter your code")
+query = st.text_area(label="Input query SQL", key="user_input")
+
+if query:
+    result = ddb.sql(query).df()
+    st.dataframe(result)
+
+tab1, tab2 = st.tabs(["Tables", "Solutions"])
 
 with tab1:
-    st.write(df)
-    query = st.text_area(label="Input query SQL")
+    st.write("table: beverages")
+    st.dataframe(beverages)
+    st.write("table: food_items")
+    st.dataframe(food_items)
+    st.write("Expected Output")
+    st.dataframe(solution)
 
-    dftest = ddb.sql(query)
-    st.write(dftest)
+with tab2:
+    st.write(answer)
 
 
 
