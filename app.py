@@ -1,4 +1,5 @@
 # pylint: disable=missing-module-docstring
+import ast
 
 import duckdb
 import streamlit as st
@@ -30,9 +31,9 @@ with st.sidebar:
 st.header("Enter your code")
 query = st.text_area(label="Input query SQL", key="user_input")
 
-#if query:
-#    result = duckdb.sql(query).df()
-#    st.dataframe(result)
+if query:
+    result = con.execute(query).df()
+    st.dataframe(result)
 #
 #    try:
 #        result = result[solution_df.columns]
@@ -47,9 +48,15 @@ query = st.text_area(label="Input query SQL", key="user_input")
 #        )
 #
 #
-#tab1, tab2 = st.tabs(["Tables", "Solutions"])
-#
-#with tab1:
+tab1, tab2 = st.tabs(["Tables", "Solutions"])
+
+with tab1:
+    st.write(exercise.loc[0, "tables"])
+    exercises_tables = ast.literal_eval(exercise.loc[0, "tables"])
+    for table in exercises_tables:
+        st.write(f"table: {table}")
+        df_table = con.execute(f"SELECT * FROM {table}").df()
+        st.write(df_table)
 #    st.write("table: beverages")
 #    st.dataframe(beverages)
 #    st.write("table: food_items")
@@ -57,5 +64,10 @@ query = st.text_area(label="Input query SQL", key="user_input")
 #    st.write("Expected Output")
 #    st.dataframe(solution_df)
 #
-#with tab2:
-#    st.write(ANSWER_STR)
+with tab2:
+    exercise_name = exercise.loc[0, "exercise_name"]
+
+    with open(file=f"answers/{exercise_name}.sql", mode="r") as f:
+        answer = f.read()
+
+    st.write(answer)
