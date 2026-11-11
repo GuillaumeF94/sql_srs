@@ -1,5 +1,4 @@
 # pylint: disable=missing-module-docstring
-import ast
 
 import duckdb
 import streamlit as st
@@ -16,7 +15,12 @@ with st.sidebar:
 
     st.write(theme)
 
-    exercise = con.execute(f"SELECT * FROM memory_state WHERE theme = '{theme}'").df()
+    exercise = (
+        con.execute(f"SELECT * FROM memory_state WHERE theme = '{theme}'")
+        .df()
+        .sort_values("last_reviewed")
+        .reset_index()
+    )
     st.write(exercise)
 
     exercise_name = exercise.loc[0, "exercise_name"]
@@ -37,9 +41,7 @@ if query:
         result = result[solution_df.columns]
         st.dataframe(result.compare(solution_df))
     except KeyError as e:
-        st.write(
-            "Some columns are missing"
-        )
+        st.write("Some columns are missing")
 
     nb_lignes_difference = result.shape[0] - solution_df.shape[0]
     if nb_lignes_difference != 0:
@@ -51,7 +53,7 @@ if query:
 tab1, tab2 = st.tabs(["Tables", "Solutions"])
 
 with tab1:
-    exercises_tables = ast.literal_eval(exercise.loc[0, "tables"])
+    exercises_tables = exercise.loc[0, "tables"]
     for table in exercises_tables:
         st.write(f"table: {table}")
         df_table = con.execute(f"SELECT * FROM {table}").df()
