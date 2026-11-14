@@ -4,6 +4,31 @@ import os
 import logging
 import duckdb
 import streamlit as st
+from datetime import timedelta
+
+
+def check_users_solution(user_query: str):
+    """
+    Checks the user solution by comparing :
+    1: the columns
+    2: the values
+    :param user_query:
+    :return:
+    """
+    result = con.execute(user_query).df()
+    st.dataframe(result)
+
+    try:
+        result = result[solution_df.columns]
+        st.dataframe(result.compare(solution_df))
+    except KeyError as e:
+        st.write("Some columns are missing")
+
+    nb_lignes_difference = result.shape[0] - solution_df.shape[0]
+    if nb_lignes_difference != 0:
+        st.write(
+            f"Result has a difference of {nb_lignes_difference} lignes compared to solution_df"
+        )
 
 if "data" not in os.listdir():
     logging.error(os.listdir())
@@ -48,21 +73,16 @@ st.header("Enter your code")
 query = st.text_area(label="Input query SQL", key="user_input")
 
 if query:
-    result = con.execute(query).df()
-    st.dataframe(result)
+    check_users_solution(query)
 
-    try:
-        result = result[solution_df.columns]
-        st.dataframe(result.compare(solution_df))
-    except KeyError as e:
-        st.write("Some columns are missing")
-
-    nb_lignes_difference = result.shape[0] - solution_df.shape[0]
-    if nb_lignes_difference != 0:
-        st.write(
-            f"Result has a difference of {nb_lignes_difference} lignes compared to solution_df"
-        )
-
+for n_days in [2, 7, 21]:
+    if st.button(f"Revoir dans {n_days} jours"):
+        new_date = datetoday() + timedelta(days=n_days)
+        con.execute(f"UPDATE memory_state SET last_reviewed = '{new_date}' WHERE exercise_name = '{exercise_name}'")
+        st.rerun()
+if st.button('Reset'):
+    con.execute("UPDATE memory_state SET last_reviewed = '1970-01-01'")
+    st.rerun()
 
 tab1, tab2 = st.tabs(["Tables", "Solutions"])
 
